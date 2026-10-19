@@ -5,11 +5,17 @@ void main() {
   runApp(const FiqhMediaApp());
 }
 
-// fiqhMedia ranglari
+// =====================================================
+// fiqhMedia 1.1.0
+// =====================================================
+
 const Color emerald = Color(0xFF087F69);
 const Color pageColor = Color(0xFFF7F9F8);
 const Color ink = Color(0xFF172B2B);
 const Color gold = Color(0xFFD6A449);
+
+const String logoPath = 'assets/icon/fiqhmedia.png';
+const double logoOpacity = 0.08;
 
 const List<String> madhhabs = [
   'Hanafiy',
@@ -24,6 +30,10 @@ const List<Color> madhhabColors = [
   Color(0xFFE78A3B),
   Color(0xFFD5A527),
 ];
+
+// =====================================================
+// APP
+// =====================================================
 
 class FiqhMediaApp extends StatelessWidget {
   const FiqhMediaApp({super.key});
@@ -57,9 +67,10 @@ class FiqhMediaApp extends StatelessWidget {
   }
 }
 
-// Namuna ma'lumotlar.
-// Bu yozuvlar fatvo emas.
-// Haqiqiy tekshirilgan manbalar keyin ulanadi.
+// =====================================================
+// MAQOLALAR MODELI
+// =====================================================
+
 class FiqhArticle {
   final String title;
   final String category;
@@ -73,6 +84,10 @@ class FiqhArticle {
     required this.description,
   });
 }
+
+// Hozircha demo ma'lumotlar.
+// Bular diniy fatvo emas.
+// Tasdiqlangan manbalar keyin ulanadi.
 
 const List<FiqhArticle> articles = [
   FiqhArticle(
@@ -117,6 +132,10 @@ const List<FiqhArticle> articles = [
   ),
 ];
 
+// =====================================================
+// MAIN SCREEN
+// =====================================================
+
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
 
@@ -130,6 +149,7 @@ class _MainScreenState extends State<MainScreen> {
   String searchText = '';
 
   final Set<String> favorites = {};
+
   final TextEditingController searchController =
       TextEditingController();
 
@@ -143,6 +163,7 @@ class _MainScreenState extends State<MainScreen> {
     final index = madhhabs.indexOf(
       selectedMadhhab ?? '',
     );
+
     return index < 0
         ? emerald
         : madhhabColors[index];
@@ -156,13 +177,14 @@ class _MainScreenState extends State<MainScreen> {
     });
   }
 
+  // Mazhablar aralashmasligi uchun filtr.
+
   List<FiqhArticle> get filteredArticles {
     if (selectedMadhhab == null) {
       return [];
     }
 
     return articles.where((article) {
-      // Muhim: mazhab bo'yicha qat'iy filtr.
       if (article.madhhab != selectedMadhhab) {
         return false;
       }
@@ -218,18 +240,22 @@ class _MainScreenState extends State<MainScreen> {
       case 1:
         screen = buildSearch();
         break;
+
       case 2:
         screen = AiChatScreen(
           key: ValueKey(selectedMadhhab),
           madhhab: selectedMadhhab,
         );
         break;
+
       case 3:
         screen = buildLibrary();
         break;
+
       case 4:
         screen = buildProfile();
         break;
+
       default:
         screen = buildHome();
     }
@@ -297,6 +323,10 @@ class _MainScreenState extends State<MainScreen> {
     );
   }
 
+  // ===================================================
+  // BOSH SAHIFA
+  // ===================================================
+
   Widget buildHome() {
     return ListView(
       padding: const EdgeInsets.all(18),
@@ -317,6 +347,7 @@ class _MainScreenState extends State<MainScreen> {
           ),
         ),
         const SizedBox(height: 20),
+
         Container(
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
@@ -356,18 +387,23 @@ class _MainScreenState extends State<MainScreen> {
             ],
           ),
         ),
+
         const SizedBox(height: 25),
         sectionTitle('Mazhabni tanlang'),
         const SizedBox(height: 8),
+
         const Text(
           'Har bir mazhab ma’lumotlari alohida.',
           style: TextStyle(color: Colors.black54),
         ),
+
         const SizedBox(height: 15),
         madhhabGrid(),
+
         const SizedBox(height: 24),
         sectionTitle('Tezkor qidiruv'),
         const SizedBox(height: 12),
+
         actionCard(
           icon: Icons.search,
           title: 'Mavzuni izlash',
@@ -380,7 +416,9 @@ class _MainScreenState extends State<MainScreen> {
             });
           },
         ),
+
         const SizedBox(height: 12),
+
         actionCard(
           icon: Icons.auto_awesome,
           title: 'fiqhMedia AI',
@@ -391,9 +429,11 @@ class _MainScreenState extends State<MainScreen> {
             });
           },
         ),
+
         const SizedBox(height: 24),
         sectionTitle('Mavzular'),
         const SizedBox(height: 12),
+
         if (selectedMadhhab == null)
           const Text(
             'Mavzularni ko‘rish uchun '
@@ -404,6 +444,10 @@ class _MainScreenState extends State<MainScreen> {
       ],
     );
   }
+
+  // ===================================================
+  // MAZHAB KARTOCHKALARI
+  // ===================================================
 
   Widget madhhabGrid() {
     return GridView.builder(
@@ -464,6 +508,10 @@ class _MainScreenState extends State<MainScreen> {
     );
   }
 
+  // ===================================================
+  // QIDIRUV
+  // ===================================================
+
   Widget buildSearch() {
     return ListView(
       padding: const EdgeInsets.all(18),
@@ -474,6 +522,7 @@ class _MainScreenState extends State<MainScreen> {
           '1. Avval mazhabni tanlang.',
         ),
         const SizedBox(height: 12),
+
         DropdownButtonFormField<String>(
           key: ValueKey(selectedMadhhab),
           initialValue: selectedMadhhab,
@@ -500,11 +549,11 @@ class _MainScreenState extends State<MainScreen> {
             }
           },
         ),
+
         const SizedBox(height: 20),
-        const Text(
-          '2. Mavzu nomini yozing.',
-        ),
+        const Text('2. Mavzu nomini yozing.'),
         const SizedBox(height: 12),
+
         TextField(
           controller: searchController,
           enabled: selectedMadhhab != null,
@@ -525,7 +574,9 @@ class _MainScreenState extends State<MainScreen> {
             ),
           ),
         ),
+
         const SizedBox(height: 20),
+
         if (selectedMadhhab == null)
           emptyState(
             'Qidiruv uchun mazhabni tanlang.',
@@ -543,6 +594,7 @@ class _MainScreenState extends State<MainScreen> {
             '${filteredArticles.length} ta natija',
           ),
           const SizedBox(height: 12),
+
           if (filteredArticles.isEmpty)
             emptyState(
               'Bu mazhab bo‘yicha mavzu '
@@ -555,6 +607,10 @@ class _MainScreenState extends State<MainScreen> {
       ],
     );
   }
+
+  // ===================================================
+  // KUTUBXONA
+  // ===================================================
 
   Widget buildLibrary() {
     final items = selectedMadhhab == null
@@ -570,11 +626,14 @@ class _MainScreenState extends State<MainScreen> {
       children: [
         sectionTitle('Raqamli kutubxona'),
         const SizedBox(height: 12),
+
         const Text(
           'Kitoblar va tasdiqlangan '
           'manbalar keyinchalik ulanadi.',
         ),
+
         const SizedBox(height: 20),
+
         if (selectedMadhhab == null)
           emptyState(
             'Avval bosh sahifadan '
@@ -595,6 +654,10 @@ class _MainScreenState extends State<MainScreen> {
     );
   }
 
+  // ===================================================
+  // PROFIL
+  // ===================================================
+
   Widget buildProfile() {
     return ListView(
       padding: const EdgeInsets.all(18),
@@ -610,7 +673,9 @@ class _MainScreenState extends State<MainScreen> {
             ),
           ),
         ),
+
         const SizedBox(height: 15),
+
         const Center(
           child: Text(
             'fiqhMedia foydalanuvchisi',
@@ -620,26 +685,31 @@ class _MainScreenState extends State<MainScreen> {
             ),
           ),
         ),
+
         const SizedBox(height: 25),
+
         actionCard(
           icon: Icons.auto_stories,
           title: 'Tanlangan mazhab',
-          subtitle: selectedMadhhab ??
-              'Hali tanlanmagan',
+          subtitle:
+              selectedMadhhab ?? 'Hali tanlanmagan',
           onTap: () {
             setState(() {
               selectedIndex = 0;
             });
           },
         ),
+
         const SizedBox(height: 12),
+
         actionCard(
           icon: Icons.favorite_outline,
           title: 'Sevimlilar',
           subtitle:
               '${favorites.length} ta saqlangan',
           onTap: () {
-            ScaffoldMessenger.of(context).showSnackBar(
+            ScaffoldMessenger.of(context)
+                .showSnackBar(
               const SnackBar(
                 content: Text(
                   'Sevimlilar sahifasi '
@@ -649,7 +719,9 @@ class _MainScreenState extends State<MainScreen> {
             );
           },
         ),
+
         const SizedBox(height: 12),
+
         actionCard(
           icon: Icons.workspace_premium_outlined,
           title: 'Obuna tariflari',
@@ -666,6 +738,10 @@ class _MainScreenState extends State<MainScreen> {
       ],
     );
   }
+
+  // ===================================================
+  // UMUMIY WIDGETLAR
+  // ===================================================
 
   Widget sectionTitle(String title) {
     return Text(
@@ -714,7 +790,10 @@ class _MainScreenState extends State<MainScreen> {
         leading: CircleAvatar(
           backgroundColor:
               const Color(0xFFE2F3EF),
-          child: Icon(icon, color: emerald),
+          child: Icon(
+            icon,
+            color: emerald,
+          ),
         ),
         title: Text(
           title,
@@ -759,9 +838,10 @@ class _MainScreenState extends State<MainScreen> {
   }
 }
 
-// AI CHAT
-// Faqat demo: hech qanday diniy hukm
-// sun'iy ravishda ishlab chiqarilmaydi.
+// =====================================================
+// FIqhMEDIA AI CHAT
+// =====================================================
+
 class AiChatScreen extends StatefulWidget {
   final String? madhhab;
 
@@ -828,42 +908,36 @@ class _AiChatScreenState extends State<AiChatScreen> {
   Widget build(BuildContext context) {
     return Stack(
       children: [
-        // Shaffof fiqhMedia fon belgisi.
+        // ============================================
+        // RASMIY FIQHMEDIA LOGOSI
+        // KO'RINISH 8%, SHAFFOFLIK 92%
+        // ============================================
+
         Positioned.fill(
           child: IgnorePointer(
             child: Center(
               child: Opacity(
-                opacity: 0.06,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: const [
-                    Icon(
-                      Icons.auto_stories_rounded,
-                      color: emerald,
-                      size: 175,
-                    ),
-                    SizedBox(height: 8),
-                    Text(
-                      'fiqhMedia',
-                      style: TextStyle(
-                        color: emerald,
-                        fontSize: 38,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                  ],
+                opacity: logoOpacity,
+                child: Image.asset(
+                  logoPath,
+                  width: 260,
+                  fit: BoxFit.contain,
                 ),
               ),
             ),
           ),
         ),
 
+        // ============================================
+        // AI CHAT INTERFEYSI
+        // ============================================
+
         Column(
           children: [
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(14),
-              color: Color(0xFFFFF3D9),
+              color: const Color(0xFFFFF3D9),
               child: const Text(
                 'AI DEMO • Tasdiqlangan '
                 'manbalar hali ulanmagan',
@@ -962,6 +1036,10 @@ class _AiChatScreenState extends State<AiChatScreen> {
                     ),
             ),
 
+            // ========================================
+            // SAVOL YOZISH
+            // ========================================
+
             SafeArea(
               top: false,
               child: Container(
@@ -1014,6 +1092,10 @@ class _AiChatScreenState extends State<AiChatScreen> {
   }
 }
 
+// =====================================================
+// CHAT MESSAGE MODEL
+// =====================================================
+
 class ChatMessage {
   final String text;
   final bool isUser;
@@ -1024,7 +1106,10 @@ class ChatMessage {
   });
 }
 
+// =====================================================
 // MAQOLA SAHIFASI
+// =====================================================
+
 class ArticleScreen extends StatefulWidget {
   final FiqhArticle article;
   final bool isFavorite;
@@ -1042,8 +1127,7 @@ class ArticleScreen extends StatefulWidget {
       _ArticleScreenState();
 }
 
-class _ArticleScreenState
-    extends State<ArticleScreen> {
+class _ArticleScreenState extends State<ArticleScreen> {
   late bool favorite;
 
   @override
@@ -1061,6 +1145,7 @@ class _ArticleScreenState
           IconButton(
             onPressed: () {
               widget.onFavorite();
+
               setState(() {
                 favorite = !favorite;
               });
@@ -1084,7 +1169,9 @@ class _ArticleScreenState
             size: 65,
             color: emerald,
           ),
+
           const SizedBox(height: 20),
+
           Text(
             widget.article.title,
             textAlign: TextAlign.center,
@@ -1093,7 +1180,9 @@ class _ArticleScreenState
               fontWeight: FontWeight.bold,
             ),
           ),
+
           const SizedBox(height: 12),
+
           Center(
             child: Chip(
               label: Text(
@@ -1101,7 +1190,9 @@ class _ArticleScreenState
               ),
             ),
           ),
+
           const SizedBox(height: 20),
+
           Card(
             child: Padding(
               padding: const EdgeInsets.all(20),
@@ -1114,7 +1205,9 @@ class _ArticleScreenState
               ),
             ),
           ),
+
           const SizedBox(height: 16),
+
           const Card(
             child: Padding(
               padding: EdgeInsets.all(18),
@@ -1132,7 +1225,10 @@ class _ArticleScreenState
   }
 }
 
-// OBUNA TARIFLARI
+// =====================================================
+// FREE / PLUS / PRO / PRO PLUS
+// =====================================================
+
 class PlansScreen extends StatelessWidget {
   const PlansScreen({super.key});
 
@@ -1159,12 +1255,16 @@ class PlansScreen extends StatelessWidget {
               fontWeight: FontWeight.bold,
             ),
           ),
+
           const SizedBox(height: 10),
+
           const Text(
             'Narxlar va imkoniyatlar '
             'hali yakuniy tasdiqlanmagan.',
           ),
+
           const SizedBox(height: 18),
+
           ...plans.map(
             (plan) => Card(
               margin: const EdgeInsets.only(
@@ -1179,17 +1279,19 @@ class PlansScreen extends StatelessWidget {
                       color: gold,
                       size: 30,
                     ),
+
                     const SizedBox(width: 16),
+
                     Expanded(
                       child: Text(
                         plan,
                         style: const TextStyle(
                           fontSize: 20,
-                          fontWeight:
-                              FontWeight.bold,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
                     ),
+
                     Text(
                       plan == 'Free'
                           ? 'Bepul'
