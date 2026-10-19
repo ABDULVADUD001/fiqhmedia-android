@@ -5,9 +5,25 @@ void main() {
   runApp(const FiqhMediaApp());
 }
 
-const Color primaryBlue = Color(0xFF1677E8);
-const Color backgroundColor = Color(0xFFF5F7FB);
-const Color darkText = Color(0xFF17233C);
+// fiqhMedia ranglari
+const Color emerald = Color(0xFF087F69);
+const Color pageColor = Color(0xFFF7F9F8);
+const Color ink = Color(0xFF172B2B);
+const Color gold = Color(0xFFD6A449);
+
+const List<String> madhhabs = [
+  'Hanafiy',
+  'Shofe’iy',
+  'Molikiy',
+  'Hanbaliy',
+];
+
+const List<Color> madhhabColors = [
+  Color(0xFF087F69),
+  Color(0xFF3478DA),
+  Color(0xFFE78A3B),
+  Color(0xFFD5A527),
+];
 
 class FiqhMediaApp extends StatelessWidget {
   const FiqhMediaApp({super.key});
@@ -19,14 +35,21 @@ class FiqhMediaApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,
-        scaffoldBackgroundColor: backgroundColor,
+        scaffoldBackgroundColor: pageColor,
         colorScheme: ColorScheme.fromSeed(
-          seedColor: primaryBlue,
+          seedColor: emerald,
         ),
         appBarTheme: const AppBarTheme(
-          backgroundColor: backgroundColor,
-          foregroundColor: darkText,
+          backgroundColor: pageColor,
+          foregroundColor: ink,
           centerTitle: false,
+        ),
+        cardTheme: CardThemeData(
+          color: Colors.white,
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
         ),
       ),
       home: const MainScreen(),
@@ -34,6 +57,9 @@ class FiqhMediaApp extends StatelessWidget {
   }
 }
 
+// Namuna ma'lumotlar.
+// Bu yozuvlar fatvo emas.
+// Haqiqiy tekshirilgan manbalar keyin ulanadi.
 class FiqhArticle {
   final String title;
   final String category;
@@ -48,44 +74,46 @@ class FiqhArticle {
   });
 }
 
-// Hozircha faqat dastur interfeysini sinash uchun
-// kiritilgan namunaviy ma'lumotlar.
 const List<FiqhArticle> articles = [
   FiqhArticle(
     title: 'Tahorat',
     category: 'Poklik',
     madhhab: 'Hanafiy',
     description:
-        'Tahorat mavzusining namunaviy bo‘limi. '
-        'Tasdiqlangan kitob va sahifalar keyin ulanadi.',
+        'Tahorat bo‘yicha tasdiqlangan '
+        'manbalar keyinchalik joylashtiriladi.',
   ),
   FiqhArticle(
     title: 'Namoz',
     category: 'Ibodat',
     madhhab: 'Hanafiy',
     description:
-        'Namoz haqidagi materiallar shu bo‘limda joylashadi.',
+        'Namozga oid ishonchli manbalar '
+        'keyinchalik qo‘shiladi.',
   ),
   FiqhArticle(
     title: 'Ro‘za',
     category: 'Ibodat',
     madhhab: 'Shofe’iy',
     description:
-        'Ro‘za haqidagi tekshirilgan manbalar keyin kiritiladi.',
+        'Ro‘za bo‘yicha tasdiqlangan '
+        'manbalar hali ulanmagan.',
   ),
   FiqhArticle(
     title: 'Zakot',
-    category: 'Moliyaviy ibodat',
+    category: 'Ibodat',
     madhhab: 'Molikiy',
     description:
-        'Zakotga oid kitoblar va ilmiy izohlar uchun bo‘lim.',
+        'Zakotga oid tekshirilgan '
+        'materiallar keyin qo‘shiladi.',
   ),
   FiqhArticle(
     title: 'Haj',
     category: 'Ibodat',
     madhhab: 'Hanbaliy',
     description:
-        'Hajga oid ishonchli materiallar uchun bo‘lim.',
+        'Haj bo‘yicha tekshirilgan '
+        'materiallar hali ulanmagan.',
   ),
 ];
 
@@ -98,21 +126,82 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   int selectedIndex = 0;
-  String selectedMadhhab = 'Hanafiy';
+  String? selectedMadhhab;
   String searchText = '';
+
   final Set<String> favorites = {};
+  final TextEditingController searchController =
+      TextEditingController();
+
+  @override
+  void dispose() {
+    searchController.dispose();
+    super.dispose();
+  }
+
+  Color get selectedColor {
+    final index = madhhabs.indexOf(
+      selectedMadhhab ?? '',
+    );
+    return index < 0
+        ? emerald
+        : madhhabColors[index];
+  }
+
+  void selectMadhhab(String name) {
+    setState(() {
+      selectedMadhhab = name;
+      searchText = '';
+      searchController.clear();
+    });
+  }
+
+  List<FiqhArticle> get filteredArticles {
+    if (selectedMadhhab == null) {
+      return [];
+    }
+
+    return articles.where((article) {
+      // Muhim: mazhab bo'yicha qat'iy filtr.
+      if (article.madhhab != selectedMadhhab) {
+        return false;
+      }
+
+      final query = searchText.toLowerCase().trim();
+
+      if (query.isEmpty) {
+        return true;
+      }
+
+      return article.title
+              .toLowerCase()
+              .contains(query) ||
+          article.category
+              .toLowerCase()
+              .contains(query);
+    }).toList();
+  }
 
   void openArticle(FiqhArticle article) {
+    if (article.madhhab != selectedMadhhab) {
+      return;
+    }
+
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => ArticleScreen(
+        builder: (_) => ArticleScreen(
           article: article,
-          isFavorite: favorites.contains(article.title),
+          isFavorite: favorites.contains(
+            '${article.madhhab}:${article.title}',
+          ),
           onFavorite: () {
+            final key =
+                '${article.madhhab}:${article.title}';
+
             setState(() {
-              if (!favorites.add(article.title)) {
-                favorites.remove(article.title);
+              if (!favorites.add(key)) {
+                favorites.remove(key);
               }
             });
           },
@@ -123,13 +212,27 @@ class _MainScreenState extends State<MainScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final screens = [
-      buildHome(),
-      buildSearch(),
-      buildAi(),
-      buildLibrary(),
-      buildProfile(),
-    ];
+    Widget screen;
+
+    switch (selectedIndex) {
+      case 1:
+        screen = buildSearch();
+        break;
+      case 2:
+        screen = AiChatScreen(
+          key: ValueKey(selectedMadhhab),
+          madhhab: selectedMadhhab,
+        );
+        break;
+      case 3:
+        screen = buildLibrary();
+        break;
+      case 4:
+        screen = buildProfile();
+        break;
+      default:
+        screen = buildHome();
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -137,14 +240,17 @@ class _MainScreenState extends State<MainScreen> {
           'fiqhMedia',
           style: TextStyle(
             fontSize: 25,
-            fontWeight: FontWeight.w800,
-            color: primaryBlue,
+            fontWeight: FontWeight.w900,
+            color: emerald,
           ),
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.workspace_premium),
             tooltip: 'Tariflar',
+            icon: const Icon(
+              Icons.workspace_premium_outlined,
+              color: gold,
+            ),
             onPressed: () {
               Navigator.push(
                 context,
@@ -156,17 +262,19 @@ class _MainScreenState extends State<MainScreen> {
           ),
         ],
       ),
-      body: SafeArea(child: screens[selectedIndex]),
+      body: SafeArea(child: screen),
       bottomNavigationBar: NavigationBar(
         selectedIndex: selectedIndex,
         onDestinationSelected: (index) {
-          setState(() => selectedIndex = index);
+          setState(() {
+            selectedIndex = index;
+          });
         },
         destinations: const [
           NavigationDestination(
             icon: Icon(Icons.home_outlined),
             selectedIcon: Icon(Icons.home),
-            label: 'Bosh sahifa',
+            label: 'Asosiy',
           ),
           NavigationDestination(
             icon: Icon(Icons.search),
@@ -174,7 +282,7 @@ class _MainScreenState extends State<MainScreen> {
           ),
           NavigationDestination(
             icon: Icon(Icons.auto_awesome_outlined),
-            label: 'AI',
+            label: 'AI Chat',
           ),
           NavigationDestination(
             icon: Icon(Icons.menu_book_outlined),
@@ -198,192 +306,217 @@ class _MainScreenState extends State<MainScreen> {
           style: TextStyle(
             fontSize: 27,
             fontWeight: FontWeight.bold,
-            color: darkText,
+            color: ink,
           ),
         ),
         const SizedBox(height: 6),
         const Text(
-          'Fiqh ilmini bir makonda o‘rganing.',
-          style: TextStyle(color: Colors.black54),
+          'Fiqh ilmi — bir makonda.',
+          style: TextStyle(
+            color: Colors.black54,
+          ),
         ),
         const SizedBox(height: 20),
         Container(
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
-            color: primaryBlue,
+            gradient: const LinearGradient(
+              colors: [
+                Color(0xFF087F69),
+                Color(0xFF064C43),
+              ],
+            ),
             borderRadius: BorderRadius.circular(24),
           ),
           child: const Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Icon(
-                Icons.auto_stories,
+                Icons.auto_stories_rounded,
                 color: Colors.white,
-                size: 42,
+                size: 48,
               ),
-              SizedBox(height: 18),
+              SizedBox(height: 20),
               Text(
-                'Ilm. Ishonch. Manba.',
+                'Ilm. Ishonch. Kelajak.',
                 style: TextStyle(
-                  color: Colors.white,
                   fontSize: 25,
                   fontWeight: FontWeight.bold,
+                  color: Colors.white,
                 ),
               ),
               SizedBox(height: 8),
               Text(
-                '4 mazhab, raqamli kutubxona va AI yordamchi',
-                style: TextStyle(color: Colors.white70),
+                'To‘rt mazhab uchun zamonaviy '
+                'raqamli ilm platformasi.',
+                style: TextStyle(
+                  color: Colors.white70,
+                ),
               ),
             ],
           ),
         ),
-        const SizedBox(height: 26),
+        const SizedBox(height: 25),
+        sectionTitle('Mazhabni tanlang'),
+        const SizedBox(height: 8),
         const Text(
-          'Mazhablar',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 21,
-          ),
+          'Har bir mazhab ma’lumotlari alohida.',
+          style: TextStyle(color: Colors.black54),
+        ),
+        const SizedBox(height: 15),
+        madhhabGrid(),
+        const SizedBox(height: 24),
+        sectionTitle('Tezkor qidiruv'),
+        const SizedBox(height: 12),
+        actionCard(
+          icon: Icons.search,
+          title: 'Mavzuni izlash',
+          subtitle: selectedMadhhab == null
+              ? 'Avval mazhabni tanlang'
+              : '$selectedMadhhab mazhabi',
+          onTap: () {
+            setState(() {
+              selectedIndex = 1;
+            });
+          },
         ),
         const SizedBox(height: 12),
-        GridView.count(
-          crossAxisCount: 2,
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          crossAxisSpacing: 12,
-          mainAxisSpacing: 12,
-          childAspectRatio: 1.7,
-          children: [
-            madhhabCard(
-              'Hanafiy',
-              const Color(0xFF247AF2),
-              Icons.menu_book,
-            ),
-            madhhabCard(
-              'Shofe’iy',
-              const Color(0xFF19B69A),
-              Icons.auto_stories,
-            ),
-            madhhabCard(
-              'Molikiy',
-              const Color(0xFFFF9048),
-              Icons.library_books,
-            ),
-            madhhabCard(
-              'Hanbaliy',
-              const Color(0xFFF0B83C),
-              Icons.book,
-            ),
-          ],
+        actionCard(
+          icon: Icons.auto_awesome,
+          title: 'fiqhMedia AI',
+          subtitle: 'AI yordamchi — demo',
+          onTap: () {
+            setState(() {
+              selectedIndex = 2;
+            });
+          },
         ),
-        const SizedBox(height: 26),
-        const Text(
-          'Mavzular',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 21,
-          ),
-        ),
-        const SizedBox(height: 10),
-        ...articles.take(3).map(articleTile),
-        const SizedBox(height: 18),
-        const Text(
-          'Sinov rejimi: diniy ma’lumotlar hali '
-          'ilmiy tekshiruvdan o‘tkazilmagan.',
-          style: TextStyle(
-            color: Colors.black54,
-            fontSize: 12,
-          ),
-        ),
+        const SizedBox(height: 24),
+        sectionTitle('Mavzular'),
+        const SizedBox(height: 12),
+        if (selectedMadhhab == null)
+          const Text(
+            'Mavzularni ko‘rish uchun '
+            'mazhab tanlang.',
+          )
+        else
+          ...filteredArticles.map(articleCard),
       ],
     );
   }
 
-  Widget madhhabCard(
-    String title,
-    Color color,
-    IconData icon,
-  ) {
-    return InkWell(
-      onTap: () {
-        setState(() {
-          selectedMadhhab = title;
-          selectedIndex = 3;
-        });
-      },
-      borderRadius: BorderRadius.circular(18),
-      child: Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: color,
-          borderRadius: BorderRadius.circular(18),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, color: Colors.white, size: 26),
-            const SizedBox(height: 8),
-            Text(
-              title,
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 17,
-              ),
-            ),
-          ],
-        ),
+  Widget madhhabGrid() {
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: madhhabs.length,
+      gridDelegate:
+          const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        mainAxisSpacing: 12,
+        crossAxisSpacing: 12,
+        childAspectRatio: 1.6,
       ),
-    );
-  }
+      itemBuilder: (context, index) {
+        final name = madhhabs[index];
+        final selected = selectedMadhhab == name;
 
-  Widget articleTile(FiqhArticle article) {
-    return Card(
-      color: Colors.white,
-      elevation: 0,
-      margin: const EdgeInsets.only(bottom: 10),
-      child: ListTile(
-        leading: const CircleAvatar(
-          backgroundColor: Color(0xFFE8F1FF),
-          child: Icon(Icons.article_outlined, color: primaryBlue),
-        ),
-        title: Text(article.title),
-        subtitle: Text(
-          '${article.category} • ${article.madhhab}',
-        ),
-        trailing: const Icon(Icons.chevron_right),
-        onTap: () => openArticle(article),
-      ),
+        return InkWell(
+          borderRadius: BorderRadius.circular(20),
+          onTap: () => selectMadhhab(name),
+          child: Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: madhhabColors[index],
+              borderRadius: BorderRadius.circular(20),
+              border: selected
+                  ? Border.all(
+                      color: ink,
+                      width: 3,
+                    )
+                  : null,
+            ),
+            child: Column(
+              mainAxisAlignment:
+                  MainAxisAlignment.center,
+              children: [
+                Icon(
+                  selected
+                      ? Icons.check_circle
+                      : Icons.auto_stories_outlined,
+                  color: Colors.white,
+                  size: 28,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  name,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 17,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
   Widget buildSearch() {
-    final results = articles.where((article) {
-      final text =
-          '${article.title} ${article.category} ${article.madhhab}'
-              .toLowerCase();
-      return text.contains(searchText.toLowerCase());
-    }).toList();
-
     return ListView(
       padding: const EdgeInsets.all(18),
       children: [
+        sectionTitle('Mavzuni izlash'),
+        const SizedBox(height: 10),
         const Text(
-          'Qidiruv',
-          style: TextStyle(
-            fontSize: 26,
-            fontWeight: FontWeight.bold,
-          ),
+          '1. Avval mazhabni tanlang.',
         ),
-        const SizedBox(height: 15),
+        const SizedBox(height: 12),
+        DropdownButtonFormField<String>(
+          key: ValueKey(selectedMadhhab),
+          initialValue: selectedMadhhab,
+          decoration: InputDecoration(
+            labelText: 'Mazhab',
+            prefixIcon: const Icon(
+              Icons.auto_stories_outlined,
+            ),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            filled: true,
+            fillColor: Colors.white,
+          ),
+          items: madhhabs.map((name) {
+            return DropdownMenuItem<String>(
+              value: name,
+              child: Text(name),
+            );
+          }).toList(),
+          onChanged: (name) {
+            if (name != null) {
+              selectMadhhab(name);
+            }
+          },
+        ),
+        const SizedBox(height: 20),
+        const Text(
+          '2. Mavzu nomini yozing.',
+        ),
+        const SizedBox(height: 12),
         TextField(
+          controller: searchController,
+          enabled: selectedMadhhab != null,
           onChanged: (value) {
-            setState(() => searchText = value);
+            setState(() {
+              searchText = value;
+            });
           },
           decoration: InputDecoration(
-            hintText: 'Mavzuni qidiring...',
+            hintText: selectedMadhhab == null
+                ? 'Avval mazhab tanlang'
+                : 'Masalan: tahorat',
             prefixIcon: const Icon(Icons.search),
             filled: true,
             fillColor: Colors.white,
@@ -392,138 +525,506 @@ class _MainScreenState extends State<MainScreen> {
             ),
           ),
         ),
-        const SizedBox(height: 18),
-        Text('${results.length} ta natija'),
-        const SizedBox(height: 12),
-        ...results.map(articleTile),
+        const SizedBox(height: 20),
+        if (selectedMadhhab == null)
+          emptyState(
+            'Qidiruv uchun mazhabni tanlang.',
+          )
+        else ...[
+          Text(
+            'Mazhab: $selectedMadhhab',
+            style: TextStyle(
+              color: selectedColor,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '${filteredArticles.length} ta natija',
+          ),
+          const SizedBox(height: 12),
+          if (filteredArticles.isEmpty)
+            emptyState(
+              'Bu mazhab bo‘yicha mavzu '
+              'topilmadi. Boshqa mazhab '
+              'natijalari ko‘rsatilmaydi.',
+            )
+          else
+            ...filteredArticles.map(articleCard),
+        ],
       ],
     );
   }
 
-  Widget buildAi() {
-    return const AiDemoScreen();
-  }
-
   Widget buildLibrary() {
-    final results = articles
-        .where((article) => article.madhhab == selectedMadhhab)
-        .toList();
+    final items = selectedMadhhab == null
+        ? <FiqhArticle>[]
+        : articles
+            .where(
+              (a) => a.madhhab == selectedMadhhab,
+            )
+            .toList();
 
     return ListView(
       padding: const EdgeInsets.all(18),
       children: [
+        sectionTitle('Raqamli kutubxona'),
+        const SizedBox(height: 12),
         const Text(
-          'Kutubxona',
-          style: TextStyle(
-            fontSize: 26,
-            fontWeight: FontWeight.bold,
+          'Kitoblar va tasdiqlangan '
+          'manbalar keyinchalik ulanadi.',
+        ),
+        const SizedBox(height: 20),
+        if (selectedMadhhab == null)
+          emptyState(
+            'Avval bosh sahifadan '
+            'mazhabni tanlang.',
+          )
+        else ...[
+          Text(
+            '$selectedMadhhab kutubxonasi',
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
           ),
-        ),
-        const SizedBox(height: 15),
-        DropdownButtonFormField<String>(
-          value: selectedMadhhab,
-          decoration: const InputDecoration(
-            labelText: 'Mazhab',
-            border: OutlineInputBorder(),
-          ),
-          items: ['Hanafiy', 'Shofe’iy', 'Molikiy', 'Hanbaliy']
-              .map(
-                (name) => DropdownMenuItem(
-                  value: name,
-                  child: Text(name),
-                ),
-              )
-              .toList(),
-          onChanged: (value) {
-            if (value != null) {
-              setState(() => selectedMadhhab = value);
-            }
-          },
-        ),
-        const SizedBox(height: 18),
-        ...results.map(articleTile),
-        const SizedBox(height: 15),
-        const Text(
-          'To‘liq kitoblar bazasi keyin ulanadi.',
-          style: TextStyle(color: Colors.black54),
-        ),
+          const SizedBox(height: 14),
+          ...items.map(articleCard),
+        ],
       ],
     );
   }
 
   Widget buildProfile() {
-    final savedArticles = articles
-        .where((article) => favorites.contains(article.title))
-        .toList();
-
     return ListView(
       padding: const EdgeInsets.all(18),
       children: [
         const Center(
           child: CircleAvatar(
-            radius: 38,
-            backgroundColor: Color(0xFFE3EFFF),
+            radius: 42,
+            backgroundColor: Color(0xFFE0F3ED),
             child: Icon(
               Icons.person,
-              size: 40,
-              color: primaryBlue,
+              size: 45,
+              color: emerald,
             ),
           ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 15),
         const Center(
           child: Text(
-            'Mehmon foydalanuvchi',
+            'fiqhMedia foydalanuvchisi',
             style: TextStyle(
-              fontSize: 22,
+              fontSize: 21,
               fontWeight: FontWeight.bold,
             ),
           ),
         ),
-        const SizedBox(height: 22),
-        Card(
-          color: Colors.white,
-          child: ListTile(
-            leading: const Icon(
-              Icons.workspace_premium,
-              color: Color(0xFFF0A82D),
-            ),
-            title: const Text('Tarifim: Free'),
-            subtitle: const Text('Plus, Pro va Pro Plus'),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const PlansScreen(),
-                ),
-              );
-            },
-          ),
+        const SizedBox(height: 25),
+        actionCard(
+          icon: Icons.auto_stories,
+          title: 'Tanlangan mazhab',
+          subtitle: selectedMadhhab ??
+              'Hali tanlanmagan',
+          onTap: () {
+            setState(() {
+              selectedIndex = 0;
+            });
+          },
         ),
-        const SizedBox(height: 20),
-        Text(
-          'Saqlangan maqolalar (${savedArticles.length})',
+        const SizedBox(height: 12),
+        actionCard(
+          icon: Icons.favorite_outline,
+          title: 'Sevimlilar',
+          subtitle:
+              '${favorites.length} ta saqlangan',
+          onTap: () {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text(
+                  'Sevimlilar sahifasi '
+                  'keyin qo‘shiladi.',
+                ),
+              ),
+            );
+          },
+        ),
+        const SizedBox(height: 12),
+        actionCard(
+          icon: Icons.workspace_premium_outlined,
+          title: 'Obuna tariflari',
+          subtitle: 'Free, Plus, Pro, Pro Plus',
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => const PlansScreen(),
+              ),
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget sectionTitle(String title) {
+    return Text(
+      title,
+      style: const TextStyle(
+        fontSize: 21,
+        fontWeight: FontWeight.bold,
+        color: ink,
+      ),
+    );
+  }
+
+  Widget emptyState(String message) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Column(
+        children: [
+          const Icon(
+            Icons.info_outline,
+            color: emerald,
+            size: 36,
+          ),
+          const SizedBox(height: 12),
+          Text(
+            message,
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget actionCard({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+  }) {
+    return Card(
+      child: ListTile(
+        contentPadding: const EdgeInsets.all(14),
+        leading: CircleAvatar(
+          backgroundColor:
+              const Color(0xFFE2F3EF),
+          child: Icon(icon, color: emerald),
+        ),
+        title: Text(
+          title,
           style: const TextStyle(
-            fontSize: 19,
             fontWeight: FontWeight.bold,
           ),
         ),
-        const SizedBox(height: 12),
-        if (savedArticles.isEmpty)
-          const Text('Hali maqola saqlanmagan.'),
-        ...savedArticles.map(articleTile),
-        const SizedBox(height: 25),
-        const ListTile(
-          leading: Icon(Icons.info_outline),
-          title: Text('fiqhMedia 1.0.0'),
-          subtitle: Text('Android sinov versiyasi'),
+        subtitle: Text(subtitle),
+        trailing: const Icon(
+          Icons.chevron_right,
+        ),
+        onTap: onTap,
+      ),
+    );
+  }
+
+  Widget articleCard(FiqhArticle article) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: ListTile(
+        contentPadding: const EdgeInsets.all(14),
+        leading: const Icon(
+          Icons.menu_book_outlined,
+          color: emerald,
+          size: 30,
+        ),
+        title: Text(
+          article.title,
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        subtitle: Text(
+          '${article.category} • ${article.madhhab}',
+        ),
+        trailing: const Icon(
+          Icons.chevron_right,
+        ),
+        onTap: () => openArticle(article),
+      ),
+    );
+  }
+}
+
+// AI CHAT
+// Faqat demo: hech qanday diniy hukm
+// sun'iy ravishda ishlab chiqarilmaydi.
+class AiChatScreen extends StatefulWidget {
+  final String? madhhab;
+
+  const AiChatScreen({
+    super.key,
+    required this.madhhab,
+  });
+
+  @override
+  State<AiChatScreen> createState() =>
+      _AiChatScreenState();
+}
+
+class _AiChatScreenState extends State<AiChatScreen> {
+  final TextEditingController controller =
+      TextEditingController();
+
+  final List<ChatMessage> messages = [];
+
+  @override
+  void dispose() {
+    controller.dispose();
+    super.dispose();
+  }
+
+  void sendMessage() {
+    final question = controller.text.trim();
+
+    if (question.isEmpty ||
+        widget.madhhab == null) {
+      return;
+    }
+
+    setState(() {
+      messages.add(
+        ChatMessage(
+          text: question,
+          isUser: true,
+        ),
+      );
+
+      messages.add(
+        ChatMessage(
+          text:
+              'Siz ${widget.madhhab} mazhabini '
+              'tanladingiz.\n\n'
+              'Hozircha fiqhMedia AI sinov '
+              'rejimida ishlamoqda. '
+              'Ushbu mazhab bo‘yicha '
+              'tasdiqlangan manbalar '
+              'va AI xizmati hali ulanmagan.\n\n'
+              'Shuning uchun hozir '
+              'manbasiz diniy hukm '
+              'berilmaydi.',
+          isUser: false,
+        ),
+      );
+
+      controller.clear();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        // Shaffof fiqhMedia fon belgisi.
+        Positioned.fill(
+          child: IgnorePointer(
+            child: Center(
+              child: Opacity(
+                opacity: 0.06,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: const [
+                    Icon(
+                      Icons.auto_stories_rounded,
+                      color: emerald,
+                      size: 175,
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      'fiqhMedia',
+                      style: TextStyle(
+                        color: emerald,
+                        fontSize: 38,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+
+        Column(
+          children: [
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(14),
+              color: Color(0xFFFFF3D9),
+              child: const Text(
+                'AI DEMO • Tasdiqlangan '
+                'manbalar hali ulanmagan',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: widget.madhhab == null
+                  ? const Text(
+                      'AI chatdan foydalanish '
+                      'uchun avval bosh sahifada '
+                      'mazhab tanlang.',
+                      textAlign: TextAlign.center,
+                    )
+                  : Chip(
+                      avatar: const Icon(
+                        Icons.auto_stories,
+                        size: 18,
+                      ),
+                      label: Text(
+                        'Mazhab: ${widget.madhhab}',
+                      ),
+                    ),
+            ),
+
+            Expanded(
+              child: messages.isEmpty
+                  ? const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(30),
+                        child: Text(
+                          'Assalomu alaykum!\n\n'
+                          'fiqhMedia AI yordamchisi '
+                          'sinov rejimida.\n\n'
+                          'Haqiqiy ilmiy manbalar '
+                          'keyin ulanadi.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.black54,
+                          ),
+                        ),
+                      ),
+                    )
+                  : ListView.builder(
+                      padding:
+                          const EdgeInsets.all(14),
+                      itemCount: messages.length,
+                      itemBuilder: (context, index) {
+                        final message =
+                            messages[index];
+
+                        return Align(
+                          alignment: message.isUser
+                              ? Alignment.centerRight
+                              : Alignment.centerLeft,
+                          child: Container(
+                            constraints:
+                                const BoxConstraints(
+                              maxWidth: 310,
+                            ),
+                            margin:
+                                const EdgeInsets.only(
+                              bottom: 12,
+                            ),
+                            padding:
+                                const EdgeInsets.all(15),
+                            decoration: BoxDecoration(
+                              color: message.isUser
+                                  ? emerald
+                                  : Colors.white
+                                      .withValues(
+                                      alpha: 0.94,
+                                    ),
+                              borderRadius:
+                                  BorderRadius.circular(
+                                18,
+                              ),
+                            ),
+                            child: Text(
+                              message.text,
+                              style: TextStyle(
+                                color: message.isUser
+                                    ? Colors.white
+                                    : ink,
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+            ),
+
+            SafeArea(
+              top: false,
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                color: Colors.white,
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: controller,
+                        enabled:
+                            widget.madhhab != null,
+                        onSubmitted: (_) {
+                          sendMessage();
+                        },
+                        decoration: InputDecoration(
+                          hintText:
+                              widget.madhhab == null
+                                  ? 'Avval mazhab tanlang'
+                                  : 'Savolingizni yozing...',
+                          filled: true,
+                          fillColor: pageColor,
+                          border: OutlineInputBorder(
+                            borderRadius:
+                                BorderRadius.circular(
+                              24,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    IconButton.filled(
+                      onPressed:
+                          widget.madhhab == null
+                              ? null
+                              : sendMessage,
+                      icon: const Icon(
+                        Icons.send_rounded,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
       ],
     );
   }
 }
 
+class ChatMessage {
+  final String text;
+  final bool isUser;
+
+  ChatMessage({
+    required this.text,
+    required this.isUser,
+  });
+}
+
+// MAQOLA SAHIFASI
 class ArticleScreen extends StatefulWidget {
   final FiqhArticle article;
   final bool isFavorite;
@@ -537,69 +1038,93 @@ class ArticleScreen extends StatefulWidget {
   });
 
   @override
-  State<ArticleScreen> createState() => _ArticleScreenState();
+  State<ArticleScreen> createState() =>
+      _ArticleScreenState();
 }
 
-class _ArticleScreenState extends State<ArticleScreen> {
-  late bool bookmarked = widget.isFavorite;
+class _ArticleScreenState
+    extends State<ArticleScreen> {
+  late bool favorite;
+
+  @override
+  void initState() {
+    super.initState();
+    favorite = widget.isFavorite;
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Maqola'),
+        title: Text(widget.article.title),
         actions: [
           IconButton(
-            icon: Icon(
-              bookmarked
-                  ? Icons.bookmark
-                  : Icons.bookmark_border,
-            ),
             onPressed: () {
               widget.onFavorite();
-              setState(() => bookmarked = !bookmarked);
+              setState(() {
+                favorite = !favorite;
+              });
             },
+            icon: Icon(
+              favorite
+                  ? Icons.favorite
+                  : Icons.favorite_border,
+              color: favorite
+                  ? Colors.red
+                  : emerald,
+            ),
           ),
         ],
       ),
       body: ListView(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(20),
         children: [
+          const Icon(
+            Icons.auto_stories_rounded,
+            size: 65,
+            color: emerald,
+          ),
+          const SizedBox(height: 20),
           Text(
-            widget.article.madhhab,
+            widget.article.title,
+            textAlign: TextAlign.center,
             style: const TextStyle(
-              color: primaryBlue,
+              fontSize: 27,
               fontWeight: FontWeight.bold,
             ),
           ),
           const SizedBox(height: 12),
-          Text(
-            widget.article.title,
-            style: const TextStyle(
-              fontSize: 30,
-              fontWeight: FontWeight.bold,
+          Center(
+            child: Chip(
+              label: Text(
+                widget.article.madhhab,
+              ),
             ),
           ),
-          const Divider(height: 36),
-          Text(
-            widget.article.description,
-            style: const TextStyle(
-              fontSize: 17,
-              height: 1.6,
+          const SizedBox(height: 20),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Text(
+                widget.article.description,
+                style: const TextStyle(
+                  fontSize: 16,
+                  height: 1.6,
+                ),
+              ),
             ),
           ),
-          const SizedBox(height: 30),
-          const Text(
-            'MANBA HOLATI',
-            style: TextStyle(
-              color: primaryBlue,
-              fontWeight: FontWeight.bold,
+          const SizedBox(height: 16),
+          const Card(
+            child: Padding(
+              padding: EdgeInsets.all(18),
+              child: Text(
+                'Manba holati: hali '
+                'tasdiqlangan manba ulanmagan.\n\n'
+                'Bu sahifa faqat ilova '
+                'interfeysini sinash uchun.',
+              ),
             ),
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            'Bu sinov matni. Asl kitob, muallif '
-            'va sahifa hali biriktirilmagan.',
           ),
         ],
       ),
@@ -607,219 +1132,75 @@ class _ArticleScreenState extends State<ArticleScreen> {
   }
 }
 
-class AiDemoScreen extends StatefulWidget {
-  const AiDemoScreen({super.key});
-
-  @override
-  State<AiDemoScreen> createState() => _AiDemoScreenState();
-}
-
-class _AiDemoScreenState extends State<AiDemoScreen> {
-  final TextEditingController controller =
-      TextEditingController();
-
-  final List<String> messages = [
-    'fiqhMedia AI demo rejimida. '
-        'Haqiqiy AI va ishonchli manbalar hali ulanmagan.',
-  ];
-
-  @override
-  void dispose() {
-    controller.dispose();
-    super.dispose();
-  }
-
-  void send() {
-    final question = controller.text.trim();
-    if (question.isEmpty) return;
-
-    setState(() {
-      messages.add('Siz: $question');
-      messages.add(
-        'AI: Hozircha javob berish tizimi ulanmagan. '
-        'Manbasiz diniy hukm chiqarilmaydi.',
-      );
-      controller.clear();
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Container(
-          width: double.infinity,
-          color: const Color(0xFFFFF0D3),
-          padding: const EdgeInsets.all(12),
-          child: const Text(
-            'AI DEMO — haqiqiy sun’iy intellekt hali ulanmagan',
-            textAlign: TextAlign.center,
-          ),
-        ),
-        Expanded(
-          child: ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: messages.length,
-            itemBuilder: (context, index) {
-              return Card(
-                color: Colors.white,
-                child: Padding(
-                  padding: const EdgeInsets.all(14),
-                  child: Text(messages[index]),
-                ),
-              );
-            },
-          ),
-        ),
-        SafeArea(
-          top: false,
-          child: Padding(
-            padding: const EdgeInsets.all(12),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: controller,
-                    onSubmitted: (_) => send(),
-                    decoration: const InputDecoration(
-                      hintText: 'Savolingizni yozing...',
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                ),
-                IconButton(
-                  onPressed: send,
-                  icon: const Icon(
-                    Icons.send,
-                    color: primaryBlue,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
+// OBUNA TARIFLARI
 class PlansScreen extends StatelessWidget {
   const PlansScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    const plans = [
+      'Free',
+      'Plus',
+      'Pro',
+      'Pro Plus',
+    ];
+
     return Scaffold(
-      appBar: AppBar(title: const Text('fiqhMedia tariflari')),
+      appBar: AppBar(
+        title: const Text('Obuna tariflari'),
+      ),
       body: ListView(
         padding: const EdgeInsets.all(18),
         children: [
           const Text(
             'O‘zingizga mos tarifni tanlang',
             style: TextStyle(
-              fontSize: 24,
+              fontSize: 23,
               fontWeight: FontWeight.bold,
             ),
           ),
           const SizedBox(height: 10),
           const Text(
-            'Asosiy diniy bilimlar barcha tariflarda bepul.',
+            'Narxlar va imkoniyatlar '
+            'hali yakuniy tasdiqlanmagan.',
           ),
-          const SizedBox(height: 20),
-          planCard(
-            context,
-            'Free',
-            '\$0',
-            const Color(0xFF667085),
-            '5 AI savol/kun • 3 tarjima/kun',
-          ),
-          planCard(
-            context,
-            'Plus',
-            '\$1 / oy',
-            const Color(0xFF1677E8),
-            '30 AI savol/kun • 20 tarjima/kun',
-          ),
-          planCard(
-            context,
-            'Pro',
-            '\$2.99 / oy',
-            const Color(0xFF19B69A),
-            '100 AI savol/kun • Audio o‘qish',
-          ),
-          planCard(
-            context,
-            'Pro Plus',
-            '\$4.99 / oy',
-            const Color(0xFF172A45),
-            '300 AI savol/kun • Kengaytirilgan AI',
-          ),
-          const SizedBox(height: 16),
-          const Text(
-            'Tariflar hozircha namuna. '
-            'Haqiqiy to‘lov tizimi ulanmagan.',
-            style: TextStyle(color: Colors.black54),
+          const SizedBox(height: 18),
+          ...plans.map(
+            (plan) => Card(
+              margin: const EdgeInsets.only(
+                bottom: 14,
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.workspace_premium,
+                      color: gold,
+                      size: 30,
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Text(
+                        plan,
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight:
+                              FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      plan == 'Free'
+                          ? 'Bepul'
+                          : 'Tez kunda',
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget planCard(
-    BuildContext context,
-    String name,
-    String price,
-    Color color,
-    String features,
-  ) {
-    return Card(
-      color: Colors.white,
-      elevation: 0,
-      margin: const EdgeInsets.only(bottom: 12),
-      child: Padding(
-        padding: const EdgeInsets.all(18),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(Icons.workspace_premium, color: color),
-                const SizedBox(width: 9),
-                Text(
-                  name,
-                  style: TextStyle(
-                    fontSize: 21,
-                    fontWeight: FontWeight.bold,
-                    color: color,
-                  ),
-                ),
-                const Spacer(),
-                Text(
-                  price,
-                  style: const TextStyle(
-                    fontSize: 19,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Text(features),
-            const SizedBox(height: 14),
-            OutlinedButton(
-              onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text(
-                      'To‘lovlar hali yoqilmagan. '
-                      'Bu sinov versiyasi.',
-                    ),
-                  ),
-                );
-              },
-              child: const Text('Batafsil'),
-            ),
-          ],
-        ),
       ),
     );
   }
